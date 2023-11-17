@@ -1,16 +1,13 @@
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class Minimax {
     private final int maxDepth;
     public static class State {
         //The depth of the state in the search tree
-        public int depth;
+        private final int depth;
         //This boolean is 1 if the state is under agent's control (Maximizer),
         //0 if the state is under opponent's control (Minimizer).
-        public boolean maxOrMin;
+        private final boolean maxOrMin;
         //String of 42 char that represents the board
         //a stands for agent
         //o stands for opponent
@@ -23,7 +20,7 @@ public class Minimax {
         //0 1 2 3 4 5 6
         //first col from bottom to top + second col from bottom to top ...
         //index in the string = x + 6 * y
-        public String boardState;
+        private final String boardState;
 
         public State(int depth, boolean maxOrMin, String boardState) {
             this.depth = depth;
@@ -36,59 +33,52 @@ public class Minimax {
     }
 
     /**
-     * This function takes a board state and get a heuristic about winning/losing/tiling.
+     * This function takes a board state and returns its heuristic score.
      * */
-    private int heuristic(String boardState) {
-        //A heuristic value to measure from where the state is close
-        int heuristicVal = 0;
+    private int heuristicScore(String boardState) {
         //Get all the possible 4 neighbor cells in the grid
-        Set<String> neighborCells = getNeighborCells(boardState);
+        List<String> neighborCells = getNeighborCells(boardState);
 
+        int heuristicScore = 0;
         for (String neighborCell: neighborCells) {
             //Agent score increases by one if it has these sequences
-            Set<String> agentSet = new HashSet<>(Arrays.asList("aaa#", "#aaa"));
-            heuristicVal += (agentSet.contains(neighborCell) ? 1 : 0);
+            Set<String> agentSet = new HashSet<>(Arrays.asList("aaa#", "#aaa", "aa##", "##aa", "a###", "###a"));
+            heuristicScore += (agentSet.contains(neighborCell) ? 1 : 0);
 
             //Agent score decreases by one if it has these sequences
-            Set<String> opponentSet = new HashSet<>(Arrays.asList("ooo#", "#ooo"));
-            heuristicVal -= (opponentSet.contains(neighborCell) ? 1 : 0);
+            Set<String> opponentSet = new HashSet<>(Arrays.asList("ooo#", "#ooo", "oo##", "##oo", "o###", "###o"));
+            heuristicScore -= (opponentSet.contains(neighborCell) ? 1 : 0);
         }
 
-        if (heuristicVal == 0)
-            return 0;
-        return (heuristicVal > 0 ? 1 : -1);
+        return heuristicScore;
     }
 
     /**
-     * This function takes a board state and returns true if it's a terminal state and false otherwise.
+     * This function takes a terminal state board and returns the final score of the board.
      * */
-    private int checkTerminalState(String boardState) {
+    private int terminalScore(String boardState) {
         //Get all the possible 4 neighbor cells on the board
-        Set<String> neighborCells = getNeighborCells(boardState);
+        List<String> neighborCells = getNeighborCells(boardState);
 
+        int finalScore = 0;
         for (String neighborCell: neighborCells) {
             //Agent wins
             if (neighborCell.equals("aaaa"))
-                return 1;
+                finalScore++;
 
             //Agent loses
             if (neighborCell.equals("oooo"))
-                return -1;
+                finalScore--;
         }
 
-        //Tile (there are no winners and the board is full)
-        if (!boardState.contains("#"))
-            return 0;
-
-        //Not a terminal state (there are no winners and the board is not full yet)
-        return 2;
+        return finalScore;
     }
 
     /**
      * This function takes a board and return a set of all possible 4 consecutive char strings.
      * */
-    private Set<String> getNeighborCells(String boardState) {
-        Set<String> neighborCells = new HashSet<>();
+    private List<String> getNeighborCells(String boardState) {
+        List<String> neighborCells = new ArrayList<>();
 
         //Loop on rows
         for (int i = 0; i <= 5; i++) {
@@ -122,8 +112,6 @@ public class Minimax {
         }
         return neighborCells;
     }
-
-
 
     /**
      * This function takes a state and get all its possible successive states.
@@ -175,13 +163,11 @@ public class Minimax {
     public int value(State state) {
         //Return a heuristic about possible wining/losing/tiling.
         if (state.depth == maxDepth)
-            return heuristic(state.boardState);
+            return terminalScore(state.boardState) + heuristicScore(state.boardState);
 
-        //Indicates if the state is a terminal state, also indicates the type of the terminal state
-        int indicator = checkTerminalState(state.boardState);
-        //Meaning that indicator either be -1 (lose), 0 (tile), or 1 (win)
-        if (indicator != 2)
-            return indicator;
+        //The terminal state is when the board is full
+        if (!state.boardState.contains("#"))
+            return terminalScore(state.boardState);
 
         //Agent turn
         if(state.maxOrMin)
@@ -218,13 +204,11 @@ public class Minimax {
     public int abValue(State state, int alpha, int beta) {
         //Return a heuristic about possible wining/losing/tiling.
         if (state.depth == maxDepth)
-            return heuristic(state.boardState);
+            return terminalScore(state.boardState) + heuristicScore(state.boardState);
 
-        //Indicates if the state is a terminal state, also indicates the type of the terminal state
-        int indicator = checkTerminalState(state.boardState);
-        //Meaning that indicator either be -1 (lose), 0 (tile), or 1 (win)
-        if (indicator != 2)
-            return indicator;
+        //The terminal state is when the board is full
+        if (!state.boardState.contains("#"))
+            return terminalScore(state.boardState);
 
         //Agent turn
         if(state.maxOrMin)

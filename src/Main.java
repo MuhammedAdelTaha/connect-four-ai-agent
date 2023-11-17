@@ -20,8 +20,11 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        Minimax aiAgent = new Minimax(42);
-        System.out.println(aiAgent.abValue(new Minimax.State(0, true, readBoard("test4.txt")),
+        Minimax aiAgent = new Minimax(6);
+        System.out.println(aiAgent.value(new Minimax.State(0, true, readBoard("test0.txt"))));
+
+        aiAgent = new Minimax(42);
+        System.out.println(aiAgent.abValue(new Minimax.State(0, true, readBoard("test0.txt")),
                 Integer.MAX_VALUE, Integer.MIN_VALUE));
     }
 }
