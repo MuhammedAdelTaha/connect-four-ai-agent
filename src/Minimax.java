@@ -3,6 +3,8 @@ import java.util.*;
 public class Minimax {
     private final int maxDepth;
     public static class State {
+
+        public State next;
         //The depth of the state in the search tree
         private final int depth;
         //This boolean is 1 if the state is under agent's control (Maximizer),
@@ -11,16 +13,9 @@ public class Minimax {
         //String of 42 char that represents the board
         //a stands for agent
         //o stands for opponent
-        //# # # # # # # 5
-        //# # # # # # # 4
-        //# a # o # # # 3
-        //# o # a a # # 2
-        //o o # a o # # 1
-        //o o a a o a # 0
-        //0 1 2 3 4 5 6
-        //first col from bottom to top + second col from bottom to top ...
+        //# stands for empty place
         //index in the string = x + 6 * y
-        private final String boardState;
+        public final String boardState;
 
         public State(int depth, boolean maxOrMin, String boardState) {
             this.depth = depth;
@@ -39,45 +34,23 @@ public class Minimax {
         //Get all the possible 4 neighbor cells in the grid
         List<String> neighborCells = getNeighborCells(boardState);
 
-        int heuristicScore = 0;
+        int heuristicScore = 0, agCount, oppCount;
         for (String neighborCell: neighborCells) {
-            //Agent score increases by one if it has these sequences
-            Set<String> agentSet = new HashSet<>(Arrays.asList("aaa#", "#aaa", "aa##", "##aa", "a###", "###a"));
-            heuristicScore += (agentSet.contains(neighborCell) ? 1 : 0);
-
-            //Agent score decreases by one if it has these sequences
-            Set<String> opponentSet = new HashSet<>(Arrays.asList("ooo#", "#ooo", "oo##", "##oo", "o###", "###o"));
-            heuristicScore -= (opponentSet.contains(neighborCell) ? 1 : 0);
+            agCount = (int) neighborCell.chars().filter(ch -> ch == 'a').count();
+            oppCount = (int) neighborCell.chars().filter(ch -> ch == 'o').count();
+            if (oppCount == 0 && agCount != 0)
+                heuristicScore += (int) Math.pow(10, agCount);
+            else if (agCount == 0 && oppCount != 0)
+                heuristicScore -= (int) Math.pow(10, oppCount);
         }
 
         return heuristicScore;
     }
 
     /**
-     * This function takes a terminal state board and returns the final score of the board.
-     * */
-    private int terminalScore(String boardState) {
-        //Get all the possible 4 neighbor cells on the board
-        List<String> neighborCells = getNeighborCells(boardState);
-
-        int finalScore = 0;
-        for (String neighborCell: neighborCells) {
-            //Agent wins
-            if (neighborCell.equals("aaaa"))
-                finalScore++;
-
-            //Agent loses
-            if (neighborCell.equals("oooo"))
-                finalScore--;
-        }
-
-        return finalScore;
-    }
-
-    /**
      * This function takes a board and return a set of all possible 4 consecutive char strings.
      * */
-    private List<String> getNeighborCells(String boardState) {
+    public List<String> getNeighborCells(String boardState) {
         List<String> neighborCells = new ArrayList<>();
 
         //Loop on rows
@@ -107,7 +80,10 @@ public class Minimax {
                                 String.valueOf(boardState.charAt(indexInString(i + k, j - k)))
                         );
                 }
-                neighborCells.addAll(Arrays.asList(x, y, rDiag, lDiag));
+                if (x.length() == 4) neighborCells.add(x);
+                if (y.length() == 4) neighborCells.add(y);
+                if (rDiag.length() == 4) neighborCells.add(rDiag);
+                if (lDiag.length() == 4) neighborCells.add(lDiag);
             }
         }
         return neighborCells;
@@ -163,18 +139,14 @@ public class Minimax {
     public int value(State state) {
         //Return a heuristic about possible wining/losing/tiling.
         if (state.depth == maxDepth)
-            return terminalScore(state.boardState) + heuristicScore(state.boardState);
-
-        //The terminal state is when the board is full
-        if (!state.boardState.contains("#"))
-            return terminalScore(state.boardState);
+            return heuristicScore(state.boardState);
 
         //Agent turn
         if(state.maxOrMin)
-            return maximizer(new State(state.depth, true, state.boardState));
+            return maximizer(state);
 
         //Opponent turn
-        return minimizer(new State(state.depth, false, state.boardState));
+        return minimizer(state);
     }
 
     /**
@@ -184,7 +156,11 @@ public class Minimax {
         int v = Integer.MIN_VALUE;
         ArrayList<State> successors = getSuccessors(state);
         for (State successor: successors) {
-            v = Math.max(v, value(successor));
+            int newV = value(successor);
+            if (newV > v) {
+                v = newV;
+                state.next = successor;
+            }
         }
         return v;
     }
@@ -196,7 +172,11 @@ public class Minimax {
         int v = Integer.MAX_VALUE;
         ArrayList<State> successors = getSuccessors(state);
         for (State successor: successors) {
-            v = Math.min(v, value(successor));
+            int newV = value(successor);
+            if (newV < v) {
+                v = newV;
+                state.next = successor;
+            }
         }
         return v;
     }
@@ -204,11 +184,7 @@ public class Minimax {
     public int abValue(State state, int alpha, int beta) {
         //Return a heuristic about possible wining/losing/tiling.
         if (state.depth == maxDepth)
-            return terminalScore(state.boardState) + heuristicScore(state.boardState);
-
-        //The terminal state is when the board is full
-        if (!state.boardState.contains("#"))
-            return terminalScore(state.boardState);
+            return heuristicScore(state.boardState);
 
         //Agent turn
         if(state.maxOrMin)
@@ -222,7 +198,11 @@ public class Minimax {
         int v = Integer.MIN_VALUE;
         ArrayList<State> successors = getSuccessors(state);
         for (State successor: successors) {
-            v = Math.max(v, abValue(successor, alpha, beta));
+            int newV = abValue(successor, alpha, beta);
+            if (newV > v) {
+                v = newV;
+                state.next = successor;
+            }
             if (v >= beta)
                 return v;
             alpha = Math.max(alpha, v);
@@ -234,7 +214,11 @@ public class Minimax {
         int v = Integer.MAX_VALUE;
         ArrayList<State> successors = getSuccessors(state);
         for (State successor: successors) {
-            v = Math.min(v, abValue(successor, alpha, beta));
+            int newV = abValue(successor, alpha, beta);
+            if (newV < v) {
+                v = newV;
+                state.next = successor;
+            }
             if (v <= alpha)
                 return v;
             beta = Math.min(beta, v);
