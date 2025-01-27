@@ -48,7 +48,7 @@ public class Minimax {
     }
 
     /**
-     * This function takes a board and return a set of all possible 4 consecutive char strings.
+     * This function takes a board and returns a set of all possible four consecutive char strings.
      * */
     public List<String> getNeighborCells(String boardState) {
         List<String> neighborCells = new ArrayList<>();
@@ -90,7 +90,7 @@ public class Minimax {
     }
 
     /**
-     * This function takes a state and get all its possible successive states.
+     * This function takes a state and gets all its possible successive states.
      * */
     private ArrayList<State> getSuccessors(State state) {
         boolean maxOrMin = state.maxOrMin;
@@ -124,7 +124,7 @@ public class Minimax {
     }
 
     /**
-     * This function takes a point (x, y) on the 2D grid and return its index on the string representation.
+     * This function takes a point (x, y) on the 2D grid and returns its index on the string representation.
      * */
     private int indexInString (int x, int y) {
         return x + 6 * y;
@@ -150,7 +150,7 @@ public class Minimax {
     }
 
     /**
-     * This function takes a state and calculate the maximum value for its successors.
+     * This function takes a state and calculates the maximum value for its successors.
      * */
     private int maximizer(State state) {
         int v = Integer.MIN_VALUE;
@@ -166,7 +166,7 @@ public class Minimax {
     }
 
     /**
-     * This function takes a state and calculate the minimum value for its successors.
+     * This function takes a state and calculates the minimum value for its successors.
      * */
     private int minimizer(State state) {
         int v = Integer.MAX_VALUE;
